@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIFF to JPG Converter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Include UTIF.js for TIFF support -->
+    <script src="https://cdn.jsdelivr.net/npm/utif@3.0.4/UTIF.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: #f0f0f0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin: 0 auto;
+            transition: background-color 0.3s;
+        }
+
+        .dark-mode .container {
+            background-color: #1e1e1e;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Header and title */
+        .tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .dark-mode .tool-header {
+            border-bottom-color: #333;
+        }
+
+        .tool-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #1565c0, #42a5f5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .dark-mode .tool-title {
+            background: linear-gradient(90deg, #1976d2, #64b5f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .mode-toggle {
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            width: 50px;
+            height: 24px;
+            position: relative;
+            cursor: pointer;
+            padding: 2px;
+            transition: background-color 0.3s;
+        }
+
+        .dark-mode .mode-toggle {
+            background-color: #333;
+        }
+
+        .toggle-circle {
+            width: 20px;
+            height: 20px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            left: 2px;
+            transition: transform 0.3s, background-color 0.3s;
+        }
+
+        .dark-mode .toggle-circle {
+            transform: translateX(26px);
+            background-color: #64b5f6;
+        }
+
+        /* Instructions */
+        .instructions {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            border-left: 4px solid #1565c0;
+        }
+
+        .dark-mode .instructions {
+            background-color: #2a2a2a;
+            border-left-color: #1976d2;
+        }
+
+        /* TIFF info notice */
+        .tiff-notice {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.5;
+            border-left: 4px solid #1565c0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .dark-mode .tiff-notice {
+            background-color: #0d2b4e;
+            border-left-color: #1976d2;
+        }
+
+        .notice-icon {
+            font-size: 20px;
+            color: #1565c0;
+            margin-top: 2px;
+        }
+
+        .dark-mode .notice-icon {
+            color: #64b5f6;
+        }
+
+        .notice-content h4 {
+            margin-bottom: 6px;
+            color: #0d47a1;
+            font-weight: 600;
+        }
+
+        .dark-mode .notice-content h4 {
+            color: #bbdefb;
+        }
+
+        .notice-content p {
+            color: #1565c0;
+            margin-bottom: 8px;
+        }
+
+        .dark-mode .notice-content p {
+            color: #90caf9;
+        }
+
+        .feature-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .feature-tag {
+            background-color: #bbdefb;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #0d47a1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dark-mode .feature-tag {
+            background-color: #0d47a1;
+            color: #bbdefb;
+        }
+
+        .feature-tag.convert {
+            background-color: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        .dark-mode .feature-tag.convert {
+            background-color: #1b5e20;
+            color: #c8e6c9;
+        }
+
+        /* Main content layout */
+        .tool-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .tool-content {
+                flex-direction: row;
+            }
+        }
+
+        /* Input and output sections */
+        .input-section, .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: #1565c0;
+        }
+
+        .dark-mode .section-title i {
+            color: #1976d2;
+        }
+
+        /* File upload area */
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #fafafa;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .dark-mode .upload-area {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #1565c0;
+            background-color: rgba(21, 101, 192, 0.05);
+        }
+
+        .dark-mode .upload-area:hover, .dark-mode .upload-area.dragover {
+            border-color: #1976d2;
+            background-color: rgba(25, 118, 210, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #1565c0;
+            margin-bottom: 15px;
+        }
+
+        .dark-mode .upload-icon {
+            color: #1976d2;
+        }
+
+        .upload-text {
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .dark-mode .upload-subtext {
+            color: #aaa;
+        }
+
+        .upload-btn {
+            background-color: #1565c0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .upload-btn:hover {
+            background-color: #0d47a1;
+            transform: translateY(-2px);
+        }
+
+        .upload-btn:active {
+            transform: translateY(0);
+        }
+
+        .dark-mode .upload-btn {
+            background-color: #1976d2;
+        }
+
+        .dark-mode .upload-btn:hover {
+            background-color: #1565c0;
+        }
+
+        /* Image preview area */
+        .preview-area {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #fafafa;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .dark-mode .preview-area {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .preview-placeholder {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .dark-mode .preview-placeholder {
+            color: #aaa;
+        }
+
+        /* File info */
+        .file-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .dark-mode .info-label {
+            color: #aaa;
+        }
+
+        .info-value {
+            font-weight: 500;
+        }
+
+        /* TIFF-specific info */
+        .tiff-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #1565c0;
+            display: none;
+        }
+
+        .dark-mode .tiff-details {
+            background-color: #2a2a2a;
+            border-left-color: #1976d2;
+        }
+
+        .tiff-details-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tiff-details-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .tiff-details-label {
+            color: #666;
+        }
+
+        .dark-mode .tiff-details-label {
+            color: #aaa;
+        }
+
+        .tiff-details-value {
+            font-weight: 500;
+        }
+
+        /* Multi-page support */
+        .multipage-controls {
+            background-color: #e8eaf6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #3f51b5;
+            display: none;
+        }
+
+        .dark-mode .multipage-controls {
+            background-color: #2a2a3a;
+            border-left-color: #7986cb;
+        }
+
+        .multipage-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .page-btn {
+            background-color: #3f51b5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .dark-mode .page-btn {
+            background-color: #7986cb;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background-color: #303f9f;
+        }
+
+        .dark-mode .page-btn:hover:not(:disabled) {
+            background-color: #5c6bc0;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* JPG options */
+        .jpg-options {
+            margin-top: 20px;
+            width: 100%;
+            display: none;
+        }
+
+        .jpg-options h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .dark-mode .jpg-options h3 {
+            color: #f0f0f0;
+        }
+
+        .option-group {
+            margin-bottom: 18px;
+        }
+
+        .option-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .option-value {
+            font-weight: 600;
+            color: #1565c0;
+        }
+
+        .dark-mode .option-value {
+            color: #1976d2;
+        }
+
+        .quality-slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .dark-mode .quality-slider {
+            background: #444;
+        }
+
+        .quality-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1565c0;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .dark-mode .quality-slider::-webkit-slider-thumb {
+            background: #1976d2;
+        }
+
+        .quality-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1565c0;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .dark-mode .quality-slider::-moz-range-thumb {
+            background: #1976d2;
+        }
+
+        /* Format buttons */
+        .format-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .format-btn {
+            flex: 1;
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .dark-mode .format-btn {
+            background-color: #2a2a2a;
+            border-color: #444;
+            color: #f0f0f0;
+        }
+
+        .format-btn:hover {
+            border-color: #1565c0;
+            transform: translateY(-2px);
+        }
+
+        .format-btn.active {
+            background-color: #1565c0;
+            border-color: #1565c0;
+            color: white;
+        }
+
+        .dark-mode .format-btn.active {
+            background-color: #1976d2;
+            border-color: #1976d2;
+        }
+
+        /* Checkbox style */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dark-mode .checkbox-custom {
+            border-color: #666;
+        }
+
+        .checkbox-custom.checked {
+            background-color: #1565c0;
+            border-color: #1565c0;
+        }
+
+        .dark-mode .checkbox-custom.checked {
+            background-color: #1976d2;
+            border-color: #1976d2;
+        }
+
+        .checkbox-custom.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* Compression comparison */
+        .compression-comparison {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 3px solid #1565c0;
+            display: none;
+        }
+
+        .dark-mode .compression-comparison {
+            background-color: #2a2a2a;
+            border-left-color: #1976d2;
+        }
+
+        .comparison-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .comparison-label {
+            color: #666;
+        }
+
+        .dark-mode .comparison-label {
+            color: #aaa;
+        }
+
+        .comparison-value {
+            font-weight: 500;
+        }
+
+        .savings {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .increase {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #1565c0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        .dark-mode .loading-spinner {
+            border-color: #444;
+            border-top-color: #1976d2;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .dark-mode .loading-text {
+            color: #aaa;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .dark-mode .control-btn:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .convert-btn {
+            background-color: #1565c0;
+            color: white;
+        }
+
+        .convert-btn:hover {
+            background-color: #0d47a1;
+        }
+
+        .dark-mode .convert-btn {
+            background-color: #1976d2;
+        }
+
+        .dark-mode .convert-btn:hover {
+            background-color: #1565c0;
+        }
+
+        .download-btn {
+            background-color: #42a5f5;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background-color: #2196f3;
+        }
+
+        .dark-mode .download-btn {
+            background-color: #64b5f6;
+            color: #0d47a1;
+        }
+
+        .dark-mode .download-btn:hover {
+            background-color: #42a5f5;
+        }
+
+        .clear-btn {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .clear-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .dark-mode .clear-btn {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+
+        .dark-mode .clear-btn:hover {
+            background-color: #444;
+        }
+
+        /* Conversion status */
+        .conversion-status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-success {
+            background-color: rgba(66, 165, 245, 0.1);
+            color: #42a5f5;
+            border: 1px solid rgba(66, 165, 245, 0.3);
+        }
+
+        .dark-mode .status-success {
+            background-color: rgba(100, 181, 246, 0.1);
+            color: #64b5f6;
+            border: 1px solid rgba(100, 181, 246, 0.3);
+        }
+
+        .status-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        /* Footer */
+        .tool-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .dark-mode .tool-footer {
+            border-top-color: #333;
+            color: #aaa;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .tool-title {
+                font-size: 24px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .control-btn {
+                width: 100%;
+            }
+            
+            .format-buttons {
+                flex-direction: column;
+            }
+            
+            .jpg-options {
+                margin-top: 15px;
+            }
+            
+            .page-controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tool-header">
+            <h1 class="tool-title">TIFF to JPG Converter</h1>
+            <button class="mode-toggle" id="modeToggle">
+                <div class="toggle-circle"></div>
+            </button>
+        </div>
+
+        <div class="instructions">
+            <p>Convert professional TIFF images to web-friendly JPG format. TIFF is ideal for printing and archiving, while JPG is perfect for web use and sharing. All processing happens in your browser using UTIF.js library.</p>
+        </div>
+
+        <div class="tiff-notice">
+            <div class="notice-icon">📄</div>
+            <div class="notice-content">
+                <h4>Professional TIFF Format</h4>
+                <p>TIFF (Tagged Image File Format) is used in photography, publishing, and scanning for its high quality and features:</p>
+                <div class="feature-list">
+                    <div class="feature-tag">🎨 Lossless compression</div>
+                    <div class="feature-tag">📖 Multiple pages</div>
+                    <div class="feature-tag">🖼️ Layers & transparency</div>
+                    <div class="feature-tag">💾 CMYK color support</div>
+                    <div class="feature-tag convert">✅ Convert to JPG for web</div>
+                </div>
+                <p style="margin-top: 8px; font-size: 12px;">TIFF files preserve maximum quality but are large. JPG provides excellent quality with much smaller file sizes.</p>
+            </div>
+        </div>
+
+        <div class="tool-content">
+            <div class="input-section">
+                <h2 class="section-title">
+                    <i>📤</i> Input (TIFF)
+                </h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <p class="upload-text">Drop your TIFF files here</p>
+                    <p class="upload-subtext">Supports .tif, .tiff files (single or multi-page)</p>
+                    <button class="upload-btn">Choose Files</button>
+                    <input type="file" id="fileInput" accept=".tif,.tiff,.TIF,.TIFF" multiple style="display: none;">
+                </div>
+
+                <div class="loading" id="loadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Decoding TIFF file...</div>
+                </div>
+
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="info-row">
+                        <span class="info-label">File name:</span>
+                        <span class="info-value" id="fileName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">File size:</span>
+                        <span class="info-value" id="fileSize">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Dimensions:</span>
+                        <span class="info-value" id="fileDimensions">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Pages:</span>
+                        <span class="info-value" id="filePages">-</span>
+                    </div>
+                </div>
+
+                <div class="tiff-details" id="tiffDetails">
+                    <div class="tiff-details-title">
+                        <span>📊 TIFF Details</span>
+                    </div>
+                    <div class="tiff-details-row">
+                        <span class="tiff-details-label">Compression:</span>
+                        <span class="tiff-details-value" id="tiffCompression">-</span>
+                    </div>
+                    <div class="tiff-details-row">
+                        <span class="tiff-details-label">Color depth:</span>
+                        <span class="tiff-details-value" id="tiffColorDepth">-</span>
+                    </div>
+                    <div class="tiff-details-row">
+                        <span class="tiff-details-label">Color space:</span>
+                        <span class="tiff-details-value" id="tiffColorSpace">-</span>
+                    </div>
+                </div>
+
+                <div class="multipage-controls" id="multipageControls">
+                    <div class="multipage-title">
+                        <span>📖 Multi-page Navigation</span>
+                    </div>
+                    <div class="page-controls">
+                        <button class="page-btn" id="prevPageBtn" disabled>← Previous</button>
+                        <div class="page-info" id="pageInfo">Page 1 of 1</div>
+                        <button class="page-btn" id="nextPageBtn" disabled>Next →</button>
+                    </div>
+                </div>
+
+                <div class="jpg-options" id="jpgOptions">
+                    <h3>JPG Conversion Settings</h3>
+                    
+                    <div class="option-group">
+                        <div class="option-label">
+                            <span>JPG Quality:</span>
+                            <span class="option-value" id="qualityValue">90%</span>
+                        </div>
+                        <input type="range" min="1" max="100" value="90" class="quality-slider" id="qualitySlider">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
+                            <span>Smaller file (lower quality)</span>
+                            <span>Better quality (larger file)</span>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <div class="option-label">
+                            <span>Color Profile:</span>
+                        </div>
+                        <div class="format-buttons">
+                            <button class="format-btn active" data-profile="srgb">sRGB (Web)</button>
+                            <button class="format-btn" data-profile="keep">Keep Original</button>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <div class="option-label">
+                            <span>Resolution:</span>
+                        </div>
+                        <div class="format-buttons">
+                            <button class="format-btn active" data-resolution="original">Original</button>
+                            <button class="format-btn" data-resolution="hd">HD (1920px)</button>
+                            <button class="format-btn" data-resolution="fullhd">Full HD (1080px)</button>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <div class="checkbox-label" id="preserveDetailsLabel">
+                            <div class="checkbox-custom checked" id="detailsCheckbox"></div>
+                            <span>Preserve fine details (sharpening)</span>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <div class="checkbox-label" id="batchConvertLabel">
+                            <div class="checkbox-custom" id="batchCheckbox"></div>
+                            <span>Convert all pages (multi-page TIFF)</span>
+                        </div>
+                    </div>
+
+                    <div class="compression-comparison" id="compressionComparison">
+                        <div class="comparison-title">Size Optimization</div>
+                        <div class="comparison-row">
+                            <span class="comparison-label">Original TIFF:</span>
+                            <span class="comparison-value" id="originalSize">-</span>
+                        </div>
+                        <div class="comparison-row">
+                            <span class="comparison-label">Converted JPG:</span>
+                            <span class="comparison-value" id="convertedSize">-</span>
+                        </div>
+                        <div class="comparison-row">
+                            <span class="comparison-label">Size reduction:</span>
+                            <span class="comparison-value" id="sizeReduction">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <h2 class="section-title">
+                    <i>📥</i> Output (JPG)
+                </h2>
+                <div class="preview-area" id="previewArea">
+                    <img class="preview-image" id="previewImage" src="" alt="Converted JPG preview">
+                    <p class="preview-placeholder" id="previewPlaceholder">Converted JPG will appear here</p>
+                </div>
+
+                <div class="conversion-status" id="conversionStatus"></div>
+
+                <div class="controls">
+                    <button class="control-btn convert-btn" id="convertBtn">
+                        <span>Convert to JPG</span>
+                    </button>
+                    <button class="control-btn download-btn" id="downloadBtn" disabled>
+                        <span>Download JPG</span>
+                    </button>
+                    <button class="control-btn clear-btn" id="clearBtn">
+                        <span>Clear All</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tool-footer">
+            <p>Professional TIFF to JPG Converter • Powered by UTIF.js • All processing done client-side</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewArea = document.getElementById('previewArea');
+        const previewImage = document.getElementById('previewImage');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileDimensions = document.getElementById('fileDimensions');
+        const filePages = document.getElementById('filePages');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const conversionStatus = document.getElementById('conversionStatus');
+        const modeToggle = document.getElementById('modeToggle');
+        const jpgOptions = document.getElementById('jpgOptions');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+        const profileButtons = document.querySelectorAll('.format-btn[data-profile]');
+        const resolutionButtons = document.querySelectorAll('.format-btn[data-resolution]');
+        const detailsCheckbox = document.getElementById('detailsCheckbox');
+        const detailsLabel = document.getElementById('preserveDetailsLabel');
+        const batchCheckbox = document.getElementById('batchCheckbox');
+        const batchLabel = document.getElementById('batchConvertLabel');
+        const compressionComparison = document.getElementById('compressionComparison');
+        const originalSize = document.getElementById('originalSize');
+        const convertedSize = document.getElementById('convertedSize');
+        const sizeReduction = document.getElementById('sizeReduction');
+        const tiffDetails = document.getElementById('tiffDetails');
+        const tiffCompression = document.getElementById('tiffCompression');
+        const tiffColorDepth = document.getElementById('tiffColorDepth');
+        const tiffColorSpace = document.getElementById('tiffColorSpace');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const multipageControls = document.getElementById('multipageControls');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const pageInfo = document.getElementById('pageInfo');
+        
+        // State variables
+        let tiffImages = []; // Array of decoded TIFF images (for multi-page support)
+        let currentPage = 0;
+        let convertedImageUrl = null;
+        let originalFileName = '';
+        let originalFileSize = 0;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let jpgQuality = 0.90;
+        let colorProfile = 'srgb'; // 'srgb' or 'keep'
+        let resolution = 'original'; // 'original', 'hd', or 'fullhd'
+        let preserveDetails = true;
+        let batchConvert = false;
+        
+        // Dark mode toggle
+        modeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+        });
+        
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+        
+        // Quality slider update
+        qualitySlider.addEventListener('input', (e) => {
+            jpgQuality = e.target.value / 100;
+            qualityValue.textContent = `${e.target.value}%`;
+            
+            // If there's already a converted image, re-convert with new quality
+            if (convertedImageUrl && tiffImages.length > 0) {
+                convertCurrentPage();
+            }
+        });
+        
+        // Color profile selection
+        profileButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                profileButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                colorProfile = btn.dataset.profile;
+                
+                // If there's already a converted image, re-convert with new profile
+                if (convertedImageUrl && tiffImages.length > 0) {
+                    convertCurrentPage();
+                }
+            });
+        });
+        
+        // Resolution selection
+        resolutionButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                resolutionButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                resolution = btn.dataset.resolution;
+                
+                // If there's already a converted image, re-convert with new resolution
+                if (convertedImageUrl && tiffImages.length > 0) {
+                    convertCurrentPage();
+                }
+            });
+        });
+        
+        // Details preservation toggle
+        detailsCheckbox.addEventListener('click', () => {
+            preserveDetails = !preserveDetails;
+            detailsCheckbox.classList.toggle('checked', preserveDetails);
+            
+            // If there's already a converted image, re-convert with new setting
+            if (convertedImageUrl && tiffImages.length > 0) {
+                convertCurrentPage();
+            }
+        });
+        
+        detailsLabel.addEventListener('click', () => {
+            preserveDetails = !preserveDetails;
+            detailsCheckbox.classList.toggle('checked', preserveDetails);
+            
+            // If there's already a converted image, re-convert with new setting
+            if (convertedImageUrl && tiffImages.length > 0) {
+                convertCurrentPage();
+            }
+        });
+        
+        // Batch conversion toggle
+        batchCheckbox.addEventListener('click', () => {
+            batchConvert = !batchConvert;
+            batchCheckbox.classList.toggle('checked', batchConvert);
+        });
+        
+        batchLabel.addEventListener('click', () => {
+            batchConvert = !batchConvert;
+            batchCheckbox.classList.toggle('checked', batchConvert);
+        });
+        
+        // Page navigation
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                updatePageDisplay();
+                displayCurrentPage();
+                if (convertedImageUrl) {
+                    convertCurrentPage();
+                }
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < tiffImages.length - 1) {
+                currentPage++;
+                updatePageDisplay();
+                displayCurrentPage();
+                if (convertedImageUrl) {
+                    convertCurrentPage();
+                }
+            }
+        });
+        
+        // Update page display
+        function updatePageDisplay() {
+            pageInfo.textContent = `Page ${currentPage + 1} of ${tiffImages.length}`;
+            prevPageBtn.disabled = currentPage === 0;
+            nextPageBtn.disabled = currentPage === tiffImages.length - 1;
+        }
+        
+        // Display current page
+        function displayCurrentPage() {
+            if (tiffImages.length > 0 && tiffImages[currentPage]) {
+                const canvas = document.createElement('canvas');
+                canvas.width = tiffImages[currentPage].width;
+                canvas.height = tiffImages[currentPage].height;
+                const ctx = canvas.getContext('2d');
+                
+                // Create a white background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw the TIFF image
+                ctx.drawImage(tiffImages[currentPage], 0, 0);
+                
+                previewImage.src = canvas.toDataURL('image/png');
+                previewImage.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+                
+                // Update dimensions display
+                fileDimensions.textContent = `${tiffImages[currentPage].width} × ${tiffImages[currentPage].height}px`;
+            }
+        }
+        
+        // File upload area interactions
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+        
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFiles(e.target.files);
+            }
+        });
+        
+        // Handle selected files
+        async function handleFiles(files) {
+            // Only process the first file
+            const file = files[0];
+            
+            // Check if it's a TIFF image
+            const isTiff = file.name.match(/\.(tif|tiff|TIF|TIFF)$/i) || 
+                          file.type === 'image/tiff' || 
+                          file.type === 'image/tif';
+            
+            if (!isTiff) {
+                showStatus('Please select a TIFF image file (.tif, .tiff).', 'error');
+                return;
+            }
+            
+            originalFileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+            originalFileSize = file.size;
+            
+            // Show loading indicator
+            loadingIndicator.style.display = 'flex';
+            uploadArea.style.display = 'none';
+            
+            // Display file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'flex';
+            tiffDetails.style.display = 'block';
+            
+            try {
+                // Read the TIFF file
+                const arrayBuffer = await file.arrayBuffer();
+                
+                // Decode TIFF using UTIF.js
+                const ifds = UTIF.decode(arrayBuffer);
+                
+                if (!ifds || ifds.length === 0) {
+                    throw new Error('No valid TIFF data found');
+                }
+                
+                // Decode all pages
+                tiffImages = [];
+                for (let i = 0; i < ifds.length; i++) {
+                    UTIF.decodeImage(arrayBuffer, ifds[i]);
+                    const rgba = UTIF.toRGBA8(ifds[i]);
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = ifds[i].width;
+                    canvas.height = ifds[i].height;
+                    const ctx = canvas.getContext('2d');
+                    
+                    const imageData = ctx.createImageData(ifds[i].width, ifds[i].height);
+                    imageData.data.set(rgba);
+                    ctx.putImageData(imageData, 0, 0);
+                    
+                    const img = new Image();
+                    img.src = canvas.toDataURL('image/png');
+                    await new Promise(resolve => {
+                        img.onload = resolve;
+                    });
+                    
+                    tiffImages.push(img);
+                }
+                
+                // Set current page to first image
+                currentPage = 0;
+                
+                // Update display
+                originalWidth = tiffImages[0].width;
+                originalHeight = tiffImages[0].height;
+                fileDimensions.textContent = `${originalWidth} × ${originalHeight}px`;
+                filePages.textContent = tiffImages.length;
+                
+                // Show multi-page controls if multi-page TIFF
+                if (tiffImages.length > 1) {
+                    multipageControls.style.display = 'block';
+                    updatePageDisplay();
+                } else {
+                    multipageControls.style.display = 'none';
+                }
+                
+                // Estimate TIFF details
+                const ifd = ifds[0];
+                tiffCompression.textContent = getCompressionName(ifd.compression);
+                tiffColorDepth.textContent = `${ifd.bitsPerSample ? ifd.bitsPerSample[0] : 8}-bit`;
+                tiffColorSpace.textContent = ifd.photometricInterpretation === 2 ? 'RGB' : 'Other';
+                
+                // Reset conversion status
+                conversionStatus.style.display = 'none';
+                compressionComparison.style.display = 'none';
+                
+                // Enable convert button
+                convertBtn.disabled = false;
+                
+                // Reset download button
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '<span>Download JPG</span>';
+                
+                // Display first page
+                displayCurrentPage();
+                
+                // Show JPG options
+                jpgOptions.style.display = 'block';
+                
+                // Hide loading indicator
+                loadingIndicator.style.display = 'none';
+                uploadArea.style.display = 'flex';
+                
+            } catch (error) {
+                console.error('TIFF decoding error:', error);
+                showStatus(`Error decoding TIFF file: ${error.message}. Try a different TIFF file or browser.`, 'error');
+                loadingIndicator.style.display = 'none';
+                uploadArea.style.display = 'flex';
+            }
+        }
+        
+        // Get compression name from TIFF compression code
+        function getCompressionName(code) {
+            const compressionCodes = {
+                1: 'None (uncompressed)',
+                2: 'CCITT Group 3',
+                3: 'CCITT Group 4',
+                4: 'LZW',
+                5: 'JPEG',
+                6: 'PackBits',
+                7: 'Deflate',
+                32773: 'PackBits',
+                32946: 'Deflate'
+            };
+            return compressionCodes[code] || `Code ${code}`;
+        }
+        
+        // Convert current page to JPG
+        function convertCurrentPage() {
+            if (tiffImages.length === 0 || !tiffImages[currentPage]) return;
+            
+            // Create canvas
+            let canvas = document.createElement('canvas');
+            let targetWidth = originalWidth;
+            let targetHeight = originalHeight;
+            
+            // Apply resolution scaling
+            if (resolution === 'hd' && originalWidth > 1920) {
+                targetWidth = 1920;
+                targetHeight = Math.round((1920 / originalWidth) * originalHeight);
+            } else if (resolution === 'fullhd') {
+                const maxDimension = 1080;
+                if (originalWidth > maxDimension || originalHeight > maxDimension) {
+                    const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
+                    targetWidth = Math.round(originalWidth * scale);
+                    targetHeight = Math.round(originalHeight * scale);
+                }
+            }
+            
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Create a white background (TIFF may have transparency)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the TIFF image with scaling if needed
+            ctx.drawImage(tiffImages[currentPage], 0, 0, targetWidth, targetHeight);
+            
+            // Apply sharpening if requested (simple unsharp mask simulation)
+            if (preserveDetails) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Simple edge enhancement
+                for (let y = 1; y < canvas.height - 1; y++) {
+                    for (let x = 1; x < canvas.width - 1; x++) {
+                        const idx = (y * canvas.width + x) * 4;
+                        
+                        // Get surrounding pixels
+                        const topIdx = ((y - 1) * canvas.width + x) * 4;
+                        const bottomIdx = ((y + 1) * canvas.width + x) * 4;
+                        const leftIdx = (y * canvas.width + (x - 1)) * 4;
+                        const rightIdx = (y * canvas.width + (x + 1)) * 4;
+                        
+                        // Calculate edge detection (Laplacian)
+                        for (let c = 0; c < 3; c++) {
+                            const edge = 4 * data[idx + c] - 
+                                       data[topIdx + c] - 
+                                       data[bottomIdx + c] - 
+                                       data[leftIdx + c] - 
+                                       data[rightIdx + c];
+                            
+                            // Enhance edges
+                            data[idx + c] = Math.min(255, Math.max(0, data[idx + c] + edge * 0.3));
+                        }
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+            }
+            
+            // Convert to JPG data URL with specified quality
+            convertedImageUrl = canvas.toDataURL('image/jpeg', jpgQuality);
+            
+            // Update preview with converted image
+            previewImage.src = convertedImageUrl;
+            
+            // Enable download button
+            downloadBtn.disabled = false;
+            
+            // Calculate and display compression comparison
+            updateCompressionComparison();
+        }
+        
+        // Update compression comparison
+        function updateCompressionComparison() {
+            if (!convertedImageUrl) return;
+            
+            // Calculate converted file size (approximate)
+            // JPG data URL is base64 encoded, so we need to estimate actual file size
+            const base64Length = convertedImageUrl.length - 'data:image/jpeg;base64,'.length;
+            const convertedFileSize = Math.ceil(base64Length * 3 / 4);
+            
+            // Update comparison display
+            originalSize.textContent = formatFileSize(originalFileSize);
+            convertedSize.textContent = formatFileSize(convertedFileSize);
+            
+            // Calculate reduction
+            const reduction = originalFileSize - convertedFileSize;
+            const reductionPercent = ((reduction / originalFileSize) * 100).toFixed(1);
+            
+            if (reduction > 0) {
+                sizeReduction.textContent = `${formatFileSize(reduction)} (${reductionPercent}% smaller)`;
+                sizeReduction.className = 'comparison-value savings';
+            } else {
+                sizeReduction.textContent = `File increased by ${formatFileSize(Math.abs(reduction))}`;
+                sizeReduction.className = 'comparison-value increase';
+            }
+            
+            compressionComparison.style.display = 'block';
+        }
+        
+        // Convert button click handler
+        convertBtn.addEventListener('click', () => {
+            if (tiffImages.length === 0) {
+                showStatus('Please upload a TIFF image first.', 'error');
+                return;
+            }
+            
+            // Show converting status
+            showStatus('Converting TIFF to JPG...', 'success');
+            
+            // Simulate conversion process
+            setTimeout(() => {
+                convertCurrentPage();
+                
+                // Show success status
+                const pageText = tiffImages.length > 1 ? `page ${currentPage + 1} of ${tiffImages.length}` : '';
+                const resolutionText = resolution === 'original' ? 'original resolution' : `${resolution} resolution`;
+                const detailsText = preserveDetails ? 'with detail preservation' : '';
+                showStatus(`Conversion successful! ${Math.round(jpgQuality * 100)}% quality, ${resolutionText} ${pageText} ${detailsText}.`, 'success');
+            }, 600);
+        });
+        
+        // Download converted JPG
+        downloadBtn.addEventListener('click', () => {
+            if (!convertedImageUrl) {
+                showStatus('No converted image available.', 'error');
+                return;
+            }
+            
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = convertedImageUrl;
+            
+            // Generate filename
+            let filename = originalFileName || 'converted';
+            if (tiffImages.length > 1 && batchConvert) {
+                filename += `_page${currentPage + 1}`;
+            }
+            link.download = `${filename}.jpg`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Show download confirmation
+            showStatus('Download started!', 'success');
+            
+            // Change button text briefly
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = '<span>✓ Downloaded</span>';
+            
+            setTimeout(() => {
+                downloadBtn.innerHTML = originalText;
+            }, 2000);
+        });
+        
+        // Clear all
+        clearBtn.addEventListener('click', () => {
+            // Reset everything
+            tiffImages = [];
+            currentPage = 0;
+            convertedImageUrl = null;
+            originalFileName = '';
+            originalFileSize = 0;
+            originalWidth = 0;
+            originalHeight = 0;
+            jpgQuality = 0.90;
+            colorProfile = 'srgb';
+            resolution = 'original';
+            preserveDetails = true;
+            batchConvert = false;
+            
+            // Reset UI
+            fileInput.value = '';
+            previewImage.src = '';
+            previewImage.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+            fileInfo.style.display = 'none';
+            jpgOptions.style.display = 'none';
+            tiffDetails.style.display = 'none';
+            multipageControls.style.display = 'none';
+            conversionStatus.style.display = 'none';
+            compressionComparison.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+            uploadArea.style.display = 'flex';
+            qualitySlider.value = 90;
+            qualityValue.textContent = '90%';
+            detailsCheckbox.classList.add('checked');
+            batchCheckbox.classList.remove('checked');
+            
+            // Reset format buttons
+            profileButtons.forEach(btn => btn.classList.remove('active'));
+            profileButtons[0].classList.add('active');
+            
+            resolutionButtons.forEach(btn => btn.classList.remove('active'));
+            resolutionButtons[0].classList.add('active');
+            
+            // Reset buttons
+            convertBtn.disabled = true;
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<span>Download JPG</span>';
+            
+            // Show cleared status briefly
+            showStatus('All cleared. Upload a new TIFF image.', 'success');
+            setTimeout(() => {
+                conversionStatus.style.display = 'none';
+            }, 3000);
+        });
+        
+        // Show status message
+        function showStatus(message, type) {
+            conversionStatus.textContent = message;
+            conversionStatus.className = 'conversion-status';
+            conversionStatus.classList.add(`status-${type}`);
+            conversionStatus.style.display = 'block';
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Initialize with a disabled convert button
+        convertBtn.disabled = true;
+    </script>
+</body>
+</html>
